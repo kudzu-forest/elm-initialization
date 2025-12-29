@@ -231,6 +231,17 @@ Each field of the first argument of `Initialization.element` has the following r
     - The returned `Html` may emit messages that update the initializing model.
 
 
+> ℹ️ Debugging the initialization phase  
+>
+> When compiled with the `--debug` flag, Elm’s debugger provides only limited insight
+> into what is happening during the initialization phase.
+>
+> If you want to observe *when* and *why* initialization is blocked,
+> or inspect intermediate model transformations in more detail,
+> see the `Initialization.Debuggable` module.
+> It provides the same semantics as `Initialization.element`,
+> with additional hooks for attaching descriptions and debug information.
+
 ## Limitations
 The `Initialization` module is intentionally limited in scope.
 
