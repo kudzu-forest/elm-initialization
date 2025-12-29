@@ -1,7 +1,7 @@
 {
     "type": "package",
 	"name": "kudzu-forest/elm-initialization",
-	"summary": "Separates initialization process, avoiding meaningless default values.",
+	"summary": "Initialization without meaningless default values and too-long-lasting Maybes",
 	"license": "MIT",
 	"version": "1.0.0",
 	"exposed-modules": [

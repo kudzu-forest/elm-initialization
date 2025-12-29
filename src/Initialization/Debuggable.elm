@@ -1,4 +1,9 @@
-module Initialization.Debuggable exposing (Program, accumulate, document, element, toDebuggable, toDebuggableCmd)
+module Initialization.Debuggable exposing
+    ( Program, MsgWithInfo
+    , toDebuggableCmd, toDebuggable
+    , element, document
+    , accumulate
+    )
 
 {-| This module enables you to prepare more precise debugging information
 than the `Initialization` module.
@@ -96,6 +101,26 @@ The code below demonstrates how to debug Posix time initialization.
                             ++ " : "
                             ++ String.fromInt (Time.toSecond timezone posixTime)
             }
+
+
+# Types
+
+@docs Program, MsgWithInfo
+
+
+# Msg Converters
+
+@docs toDebuggableCmd, toDebuggable
+
+
+# Main Functions
+
+@docs element, document
+
+
+# Helper
+
+@docs accumulate
 
 -}
 
