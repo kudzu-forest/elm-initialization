@@ -13,8 +13,11 @@ and another that exists only during the running phase.
 This helps you avoid flooding your model with `Maybe` values
 that are needed only to represent the absence of data during initialization.
 
-If you find these functionalities too restricted,
-check the `Initialization.Advanced` module for more control.
+  - If you use `elm make --debug` and
+    need more detailed information during the initializing phase,
+    check out the `Initialization.Debuggable` module.
+  - If you find these functionalities too restricted,
+    check the `Initialization.Advanced` module for more control.
 
 
 # Type
@@ -79,10 +82,13 @@ and any remaining `Cmd (initializingModel -> initializingModel)` values are igno
 Be careful not to return `Ok _` while waiting for indispensable command results,
 such as those from an HTTP request.
 
-If you need more advanced control, see `Initialization.Advanced.element`, which allows:
-
-  - dynamic creation of `Cmd` values during the initialization phase
-  - controlling the execution order of commands, as in normal TEA applications
+  - If you find the information shown in the Elm Debugger
+    during the initializing phase insufficient,
+    consider using `Initialization.Debuggable.element` instead.
+  - If you need more advanced control over the initialization process,
+    see `Initialization.Advanced.element`, which allows:
+      - dynamic creation of `Cmd` values during the initialization phase
+      - controlling the execution order of commands, as in normal TEA applications
 
 -}
 element :
@@ -140,10 +146,13 @@ and any remaining `Cmd (initializingModel -> initializingModel)` values are igno
 Be careful not to return `Ok _` while waiting for indispensable command results,
 such as those from an HTTP request.
 
-If you need more advanced control, see `Initialization.Advanced.document`, which allows:
-
-  - dynamic creation of `Cmd` values during the initialization phase
-  - controlling the execution order of commands, as in normal TEA applications
+  - If you find the information shown in the Elm Debugger
+    during the initializing phase insufficient,
+    consider using `Initialization.Debuggable.document` instead.
+  - If you need more advanced control over the initialization process,
+    see `Initialization.Advanced.document`, which allows:
+      - dynamic creation of `Cmd` values during the initialization phase
+      - controlling the execution order of commands, as in normal TEA applications
 
 -}
 document :
