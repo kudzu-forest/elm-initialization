@@ -142,7 +142,7 @@ element { init, initSubscriptions, initUpdate, initView, toRunning } { subscript
                                         ( Running rModel, Cmd.map RunningMsg rCmd )
 
                             _ ->
-                                -- impossible
+                                -- ignored
                                 ( model, Cmd.none )
         , view =
             \model ->
@@ -248,7 +248,7 @@ document { init, initSubscriptions, initUpdate, initView, toRunning } { subscrip
                                         ( Running rModel, Cmd.map RunningMsg rCmd )
 
                             _ ->
-                                -- impossible
+                                -- ignored
                                 ( model, Cmd.none )
         , view =
             \model ->
