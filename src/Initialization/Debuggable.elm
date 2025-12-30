@@ -58,7 +58,7 @@ The code below demonstrates how to debug Posix time initialization.
     type Msg
         = Tick Time.Posix
 
-    main : Init.Program () { mTimezone : Maybe Time.Zone, mPosixTime : Maybe Time.Posix } InitUpdateInfo { timezone : Time.Zone, posixTime : Time.Posix } Msg
+    main : Init.Program () { mTimezone : Maybe Time.Zone, mPosixTime : Maybe Time.Posix } InitUpdateInfo String { timezone : Time.Zone, posixTime : Time.Posix } Msg
     main =
         Init.element
             { init =
@@ -132,7 +132,7 @@ import Task
 
 {-| `Msg` type used internally to represent model-transforming steps during the initializing phase.
 -}
-type MsgWithInfo initUpdateInfo initializingModel
+type MsgWithInfo initUpdateInfo blockingReason initializingModel
     = TransformFunctionArrived
         { description : String
         , toUpdateInfo : { old : initializingModel, new : initializingModel } -> initUpdateInfo
@@ -141,40 +141,18 @@ type MsgWithInfo initUpdateInfo initializingModel
     | TransformExecuted
         { description : String
         , updateInfo : initUpdateInfo
+        , blockingReasons : List blockingReason
         }
 
 
 {-| Type alias for `Platform.Program flag <internally defined Model type> <internally defined Msg type>`.
 -}
-type alias Program flag initializingModel initUpdateInfo runningModel runningMsg =
-    I.Program flag initializingModel (MsgWithInfo initUpdateInfo initializingModel) runningModel runningMsg
-
-
-initUpdate : MsgWithInfo initUpdateInfo initializingModel -> initializingModel -> ( initializingModel, Cmd (MsgWithInfo initUpdateInfo initializingModel) )
-initUpdate iMsg iModel =
-    case iMsg of
-        TransformFunctionArrived { description, toUpdateInfo, transform } ->
-            let
-                newModel =
-                    transform iModel
-            in
-            ( newModel
-            , Task.perform identity
-                (Task.succeed
-                    (TransformExecuted
-                        { description = description
-                        , updateInfo = toUpdateInfo { old = iModel, new = newModel }
-                        }
-                    )
-                )
-            )
-
-        TransformExecuted _ ->
-            ( iModel, Cmd.none )
+type alias Program flag initializingModel initUpdateInfo blockingReason runningModel runningMsg =
+    I.Program flag initializingModel (MsgWithInfo initUpdateInfo blockingReason initializingModel) runningModel runningMsg
 
 
 {-| Converts `Cmd (initializingModel -> initializingModel)`
-into `Cmd (MsgWithInfo updateInfo initializingModel)`.
+into `Cmd (MsgWithInfo updateInfo blockingReason initializingModel)`.
 
 This function is intended to be used in the `init` function.
 
@@ -183,7 +161,7 @@ toDebuggableCmd :
     String
     -> ({ old : initializingModel, new : initializingModel } -> initUpdateInfo)
     -> Cmd (initializingModel -> initializingModel)
-    -> Cmd (MsgWithInfo initUpdateInfo initializingModel)
+    -> Cmd (MsgWithInfo initUpdateInfo blockingReason initializingModel)
 toDebuggableCmd description toUpdateInfo =
     Cmd.map
         (\transform ->
@@ -196,7 +174,7 @@ toDebuggableCmd description toUpdateInfo =
 
 
 {-| Converts `initializingModel -> initializingModel`
-into `MsgWithInfo updateInfo initializingModel`.
+into `MsgWithInfo updateInfo blockingReason initializingModel`.
 
 This function is intended to be used in the `initView` function.
 
@@ -205,7 +183,7 @@ toDebuggable :
     String
     -> ({ old : initializingModel, new : initializingModel } -> initUpdateInfo)
     -> (initializingModel -> initializingModel)
-    -> MsgWithInfo initUpdateInfo initializingModel
+    -> MsgWithInfo initUpdateInfo blockingReason initializingModel
 toDebuggable description toUpdateInfo transform =
     TransformFunctionArrived
         { description = description
@@ -216,12 +194,12 @@ toDebuggable description toUpdateInfo transform =
 
 {-| Similar to `Initialization.element`, but requires that all `Msg` values
 are converted from `initializingModel -> initializingModel`
-into `MsgWithInfo initUpdateInfo initializingModel`
+into `MsgWithInfo initUpdateInfo blockingReason initializingModel`
 using `toDebuggableCmd` and `toDebuggable`.
 -}
 element :
-    { init : flag -> ( initializingModel, Cmd (MsgWithInfo initUpdateInfo initializingModel) )
-    , initView : List blockingReason -> initializingModel -> Html (MsgWithInfo initUpdateInfo initializingModel)
+    { init : flag -> ( initializingModel, Cmd (MsgWithInfo initUpdateInfo blockingReason initializingModel) )
+    , initView : List blockingReason -> initializingModel -> Html (MsgWithInfo initUpdateInfo blockingReason initializingModel)
     , toRunning : initializingModel -> Result (List blockingReason) ( runningModel, Cmd runningMsg )
     }
     ->
@@ -229,8 +207,38 @@ element :
         , update : runningMsg -> runningModel -> ( runningModel, Cmd runningMsg )
         , view : runningModel -> Html runningMsg
         }
-    -> Program flag initializingModel initUpdateInfo runningModel runningMsg
+    -> Program flag initializingModel initUpdateInfo blockingReason runningModel runningMsg
 element { init, initView, toRunning } =
+    let
+        initUpdate : MsgWithInfo initUpdateInfo blockingReason initializingModel -> initializingModel -> ( initializingModel, Cmd (MsgWithInfo initUpdateInfo blockingReason initializingModel) )
+        initUpdate iMsg iModel =
+            case iMsg of
+                TransformFunctionArrived { description, toUpdateInfo, transform } ->
+                    let
+                        newModel =
+                            transform iModel
+                    in
+                    ( newModel
+                    , Task.perform identity
+                        (Task.succeed
+                            (TransformExecuted
+                                { description = description
+                                , updateInfo = toUpdateInfo { old = iModel, new = newModel }
+                                , blockingReasons =
+                                    case toRunning newModel of
+                                        Err list ->
+                                            list
+
+                                        Ok _ ->
+                                            []
+                                }
+                            )
+                        )
+                    )
+
+                TransformExecuted _ ->
+                    ( iModel, Cmd.none )
+    in
     I.element
         { init = init
         , initSubscriptions = \_ -> Sub.none
@@ -242,12 +250,12 @@ element { init, initView, toRunning } =
 
 {-| Similar to `Initialization.document`, but requires that all `Msg` values
 are converted from `initializingModel -> initializingModel`
-into `MsgWithInfo initUpdateInfo initializingModel`
+into `MsgWithInfo initUpdateInfo blockingReason initializingModel`
 using `toDebuggableCmd` and `toDebuggable`.
 -}
 document :
-    { init : flag -> ( initializingModel, Cmd (MsgWithInfo initUpdateInfo initializingModel) )
-    , initView : List blockingReason -> initializingModel -> Browser.Document (MsgWithInfo initUpdateInfo initializingModel)
+    { init : flag -> ( initializingModel, Cmd (MsgWithInfo initUpdateInfo blockingReason initializingModel) )
+    , initView : List blockingReason -> initializingModel -> Browser.Document (MsgWithInfo initUpdateInfo blockingReason initializingModel)
     , toRunning : initializingModel -> Result (List blockingReason) ( runningModel, Cmd runningMsg )
     }
     ->
@@ -255,8 +263,38 @@ document :
         , update : runningMsg -> runningModel -> ( runningModel, Cmd runningMsg )
         , view : runningModel -> Browser.Document runningMsg
         }
-    -> Program flag initializingModel initUpdateInfo runningModel runningMsg
+    -> Program flag initializingModel initUpdateInfo blockingReason runningModel runningMsg
 document { init, initView, toRunning } =
+    let
+        initUpdate : MsgWithInfo initUpdateInfo blockingReason initializingModel -> initializingModel -> ( initializingModel, Cmd (MsgWithInfo initUpdateInfo blockingReason initializingModel) )
+        initUpdate iMsg iModel =
+            case iMsg of
+                TransformFunctionArrived { description, toUpdateInfo, transform } ->
+                    let
+                        newModel =
+                            transform iModel
+                    in
+                    ( newModel
+                    , Task.perform identity
+                        (Task.succeed
+                            (TransformExecuted
+                                { description = description
+                                , updateInfo = toUpdateInfo { old = iModel, new = newModel }
+                                , blockingReasons =
+                                    case toRunning newModel of
+                                        Err list ->
+                                            list
+
+                                        Ok _ ->
+                                            []
+                                }
+                            )
+                        )
+                    )
+
+                TransformExecuted _ ->
+                    ( iModel, Cmd.none )
+    in
     I.document
         { init = init
         , initSubscriptions = \_ -> Sub.none
