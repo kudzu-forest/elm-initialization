@@ -1,20 +1,19 @@
 {
     "type": "package",
-	"name": "kudzu-forest/elm-initialization",
-	"summary": "Initialization without meaningless default values and too-long-lasting Maybes",
-	"license": "MIT",
-	"version": "1.0.0",
-	"exposed-modules": [
-		"Initialization",
-		"Initialization.Debuggable",
-		"Initialization.Advanced"
-	],
+    "name": "kudzu-forest/elm-initialization",
+    "summary": "Initialization without meaningless default values and too-long-lasting Maybes",
+    "license": "MIT",
+    "version": "2.0.0",
+    "exposed-modules": [
+        "Initialization",
+        "Initialization.Debuggable",
+        "Initialization.Advanced"
+    ],
     "elm-version": "0.19.1 <= v < 0.20.0",
     "dependencies": {
-		"elm/browser": "1.0.2 <= v < 2.0.0",
-		"elm/core": "1.0.5 <= v < 2.0.0",
-		"elm/html": "1.0.1 <= v < 2.0.0"
+        "elm/browser": "1.0.2 <= v < 2.0.0",
+        "elm/core": "1.0.5 <= v < 2.0.0",
+        "elm/html": "1.0.1 <= v < 2.0.0"
     },
-    "test-dependencies": {
-    }
+    "test-dependencies": {}
 }
