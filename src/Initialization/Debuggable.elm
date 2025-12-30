@@ -28,16 +28,19 @@ By using this module, you can:
     to `import Initialization.Debuggable as Init`.
     Using the same alias saves time and effort.
 
-2.  Add `Init.toDebuggableCmd "" (always Nothing)`
+2.  Add two type parameters, `initUpdateInfo` and `blockingReason`, to type annotation of `main` function,
+    just after `initializingModel` parameter in this order.
+
+3.  Add `Init.toDebuggableCmd "" (always Nothing)`
     before each `Cmd` value passed to `Cmd.batch` in your `init` function.
 
-3.  Add `Init.toDebuggable "" (always Nothing)`
+4.  Add `Init.toDebuggable "" (always Nothing)`
     before each model-transforming function in the `Html` value returned
     from the `initView` function.
 
-4.  Fill in the empty string arguments (`""`) with descriptions as needed.
+5.  Fill in the empty string arguments (`""`) with descriptions as needed.
 
-5.  Replace any of the `(always Nothing)` functions with
+6.  Replace any of the `(always Nothing)` functions with
     `({ old : initializingModel, new : initializingModel } -> updateInfo)`,
     where `updateInfo` is any type you define.
     Wrapping the value in `Just` is usually sufficient.
@@ -58,7 +61,7 @@ The code below demonstrates how to debug Posix time initialization.
     type Msg
         = Tick Time.Posix
 
-    main : Init.Program () { mTimezone : Maybe Time.Zone, mPosixTime : Maybe Time.Posix } InitUpdateInfo String { timezone : Time.Zone, posixTime : Time.Posix } Msg
+    main : Init.Program () { mTimezone : Maybe Time.Zone, mPosixTime : Maybe Time.Posix } (Maybe InitUpdateInfo) String { timezone : Time.Zone, posixTime : Time.Posix } Msg
     main =
         Init.element
             { init =
@@ -71,7 +74,7 @@ The code below demonstrates how to debug Posix time initialization.
                             (always Nothing)
                             (Task.perform (\tz im -> { im | mTimezone = Just tz }) Time.here)
                         , Init.toDebuggableCmd "updating posix time"
-                            (\{ old, new } -> PosixTimeUpdated { old = old.mPosixTime, new = new.mPosixTime })
+                            (\{ old, new } -> Just (PosixTimeUpdated { old = old.mPosixTime, new = new.mPosixTime }))
                             (Task.perform (\pt im -> { im | mPosixTime = Just pt }) Time.now)
                         ]
                     )
